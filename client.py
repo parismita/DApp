@@ -9,7 +9,7 @@ w3 = Web3(provider)
 print(w3.is_connected())
 
 #replace the address with your contract address (!very important)
-deployed_contract_address = '0x8F046F919BA03C951C9E6c1A5439f6C62F7341bd'
+deployed_contract_address = '0x8fee3610F0a973fEA7Ab6c66Da8620F39390016d'
 
 #path of the contract json file. edit it with your contract json file
 compiled_contract_path ="build/contracts/Payment.json"
@@ -33,4 +33,10 @@ print(w3.eth.get_transaction(txn_receipt_json))
 
 '''
 
-#Add your Code here
+txn_receipt = contract.functions.createAcc(2, 3, 6).transact({'txType':"0x3", 'from':w3.eth.accounts[0], 'gas':2409638})
+txn_receipt_json = json.loads(w3.to_json(txn_receipt))
+print(txn_receipt_json) # print transaction hash
+
+print(w3.eth.get_transaction(txn_receipt_json))
+
+

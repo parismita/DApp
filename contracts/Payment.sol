@@ -2,19 +2,19 @@
 pragma solidity >=0.4.22 <0.9.0;
 
 contract Payment {
-  uint256 MAX_INT = 2**256 - 1;
+  mapping(uint256 => User) users;
+  mapping(uint256 => mapping(uint256 => uint256)) joint_acc_contribution;
+  uint256 COUNT;
+  uint256[] userlist; // store the userlist
+  uint256[][] adj; // store the edgelist
 
   struct User {
     uint256 user_id;
     string user_name;
   }
 
-  constructor() public {
-    mapping(uint256 => User) users;
-    mapping(uint256 => mapping(uint256 => uint256)) joint_acc_contribution;
-    uint256 COUNT = 0;
-    uint256[] userlist; // store the userlist
-    uint256[][] adj; // store the edgelist
+  constructor () public {
+    COUNT = 0;
   }
 
   function hasEdge(uint256 user_id_1, uint256 user_id_2) public returns (bool) {
@@ -24,7 +24,7 @@ contract Payment {
     return false;
   }
 
-  function registerUser(uint256 user_id, string user_name) public {
+  function registerUser(uint256 user_id, string memory user_name) public {
     users[user_id] = User(user_id, user_name);
     userlist[COUNT] = user_id;
     COUNT++;
@@ -61,9 +61,9 @@ contract Payment {
   }
 
   function shortestPath(uint user_id_1, uint user_id_2) public returns (uint256[] memory) {
-    uint256[] memory queue = new uint256[](MAX_INT);
-    bool[COUNT] memory visited = new bool[COUNT](false);
-    uint256[COUNT] memory prev = new uint256[COUNT](0);
+    uint256[] memory queue = new uint256[](COUNT+1);
+    bool[] memory visited = new bool[](COUNT+1);
+    uint256[] memory prev = new uint256[](COUNT+1);
 
     bool found = false;
     uint start = 0;
@@ -76,7 +76,7 @@ contract Payment {
       start += 1;
       for (uint256 i = 0; i < adj[curr].length; i++)
       {
-        uint256 next = adj[curr][i][0];
+        uint256 next = adj[curr][i];
         if (!visited[next])
         {
           prev[next] = curr;
@@ -95,21 +95,34 @@ contract Payment {
     if (!found)
       return new uint256[](0);
 
-    uint256[] memory path = new uint256[](MAX_INT);
-    uint i = 0;
-    uint256 curr = user_id_2;
-    while(curr != user_id_1)
+    uint256[] memory path;
+    uint256 j = 0;
+    uint256 c = user_id_2;
+    while(c != user_id_1)
     {
-      path[i] = curr;
-      curr = prev[curr];
-      i += 1;
+      path[j] = c;
+      c = prev[c];
+      j += 1;
     }
-    path[i] = user_id_1;
+    path[j] = user_id_1;
     return path;
   }
 
   function closeAccount(uint256 user_id_1, uint256 user_id_2) public {
-    delete users[user_id_1].joint_accs[user_id_2];
-    delete users[user_id_2].joint_accs[user_id_1];
+    require(hasEdge(user_id_1, user_id_2));
+    for (uint256 i = 0; i < adj[user_id_1].length; i++)
+      if (adj[user_id_1][i] == user_id_2) {
+        adj[user_id_1][i] = adj[user_id_1][adj[user_id_1].length - 1];
+        adj[user_id_1].pop();
+        break;
+      }
+    for (uint256 i = 0; i < adj[user_id_2].length; i++)
+      if (adj[user_id_2][i] == user_id_1) {
+        adj[user_id_2][i] = adj[user_id_2][adj[user_id_2].length - 1];
+        adj[user_id_2].pop();
+        break;
+      }
+    delete joint_acc_contribution[user_id_1][user_id_2];
+    delete joint_acc_contribution[user_id_2][user_id_1];
   }
 }
