@@ -78,21 +78,36 @@ contract Payment {
     for (uint256 i = 0; i < path.length - 1; i++) {
       uint256 curr = path[i];
       uint256 next = path[i+1];
-      if (joint_acc_contribution[curr][next] < 1) {
+      if (joint_acc_contribution[curr][next] < 1000) {
         satisfied = false;
         break;
       }
     }
+    require(satisfied);
 
     if (satisfied) {
       for (uint256 i = 0; i < path.length - 1; i++) {
         uint256 curr = path[i];
         uint256 next = path[i+1];
-        joint_acc_contribution[curr][next] -= 1;
-        joint_acc_contribution[next][curr] += 1;
+        joint_acc_contribution[curr][next] -= 1000;
+        joint_acc_contribution[next][curr] += 1000;
       }
     }
   }
+
+  function getFailureReason(uint256 user_id_1, uint256 user_id_2) public returns (uint256[] memory, uint256[] memory) {
+    uint256[] memory path = shortestPath(user_id_1, user_id_2);
+    uint256[] memory balances = new uint256[](path.length-1);
+    
+    for (uint256 i = 0; i < path.length - 1; i++) {
+      uint256 curr = path[i];
+      uint256 next = path[i+1];
+      balances[i] = joint_acc_contribution[curr][next];
+    }
+
+    return (path, balances);
+  }
+
 
   function shortestPath(uint256 user_id_1, uint256 user_id_2) public returns (uint256[] memory) {
     uint256[] memory queue = new uint256[](COUNT+1);
@@ -113,8 +128,10 @@ contract Payment {
         uint256 next = adj[curr][i];
         if (visited.get(next) == 0)
         {
-          prev.update(next, curr);
           visited.update(next, 1);
+          if (joint_acc_contribution[curr][next] < 1000)
+            continue;
+          prev.update(next, curr);
           queue[end] = next;
           end++;
 

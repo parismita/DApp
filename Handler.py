@@ -1,7 +1,3 @@
-import web3
-import json
-from web3 import Web3
-
 class Handler:
     def __init__(self, w3, contract, account):
         self.w3 = w3
@@ -44,6 +40,9 @@ class Handler:
         if tx_receipt['status'] == 1:
             return True
         return False
+
+    def getFailureReason(self, id1, id2):
+        return self.contract.functions.getFailureReason(id1, id2).call({'from': self.account})
 
     def closeAccount(self, id1, id2):
         tx_hash = self.contract.functions.closeAccount(id1, id2).transact({'txType':"0x3", 'from':self.account, 'gas':30000000})
