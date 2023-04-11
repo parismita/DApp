@@ -47,9 +47,13 @@ contract Payment {
     emit UserRegistered(user_id, user_name);
   }
 
-  function getUser(uint256 user_id) public view returns (uint256, string memory, bool, uint256) {
+  function getUser(uint256 user_id) public view returns (uint256, string memory, bool, uint256[] memory) {
     User memory user = users[user_id];
-    return (user.user_id, user.user_name, user.isRegistered, COUNT);
+    return (user.user_id, user.user_name, user.isRegistered, adj[user_id]);
+  }
+
+  function getAllUsers() public view returns (uint256[] memory) {
+    return userlist;
   }
 
   function createAcc(uint256 user_id_1, uint256 user_id_2, uint256 balance) public {
@@ -58,6 +62,7 @@ contract Payment {
     adj[user_id_2].push(user_id_1);
     joint_acc_contribution[user_id_1][user_id_2] = balance/2;
     joint_acc_contribution[user_id_2][user_id_1] = balance/2;
+    emit AccountCreated(user_id_1, user_id_2, balance);
   }
 
   function getAcc(uint256 user_id_1, uint256 user_id_2) public view returns (uint256, uint256, uint256, uint256) {
