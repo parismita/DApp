@@ -1,23 +1,38 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
 
+
+contract DynamicMapping {
+    mapping(uint256 => uint256) public map;
+
+    function update(uint256 key, uint256 val) public {
+        map[key] = val;
+    }
+
+    function get(uint256 key) public view returns (uint256) {
+        return map[key];
+    }
+}
+
+
 contract Payment {
   mapping(uint256 => User) users;
+  mapping(uint256 => uint256[]) adj; 
   mapping(uint256 => mapping(uint256 => uint256)) joint_acc_contribution;
-  uint256 COUNT;
+
+  uint256 COUNT = 0;
   uint256[] userlist; // store the userlist
-  uint256[][] adj; // store the edgelist
 
   struct User {
     uint256 user_id;
     string user_name;
+    bool isRegistered;
   }
 
-  constructor () public {
-    COUNT = 0;
-  }
+  event UserRegistered(uint256 user_id, string user_name);
+  event AccountCreated(uint256 user_id_1, uint256 user_id_2, uint256 balance);
 
-  function hasEdge(uint256 user_id_1, uint256 user_id_2) public returns (bool) {
+  function hasEdge(uint256 user_id_1, uint256 user_id_2) public view returns (bool) {
     for (uint256 i = 0; i < adj[user_id_1].length; i++)
       if (adj[user_id_1][i] == user_id_2) 
         return true;
@@ -25,9 +40,16 @@ contract Payment {
   }
 
   function registerUser(uint256 user_id, string memory user_name) public {
-    users[user_id] = User(user_id, user_name);
-    userlist[COUNT] = user_id;
+    require(users[user_id].isRegistered == false);
+    users[user_id] = User(user_id, user_name, true);
+    userlist.push(user_id);
     COUNT++;
+    emit UserRegistered(user_id, user_name);
+  }
+
+  function getUser(uint256 user_id) public view returns (uint256, string memory, bool, uint256) {
+    User memory user = users[user_id];
+    return (user.user_id, user.user_name, user.isRegistered, COUNT);
   }
 
   function createAcc(uint256 user_id_1, uint256 user_id_2, uint256 balance) public {
@@ -38,12 +60,19 @@ contract Payment {
     joint_acc_contribution[user_id_2][user_id_1] = balance/2;
   }
 
+  function getAcc(uint256 user_id_1, uint256 user_id_2) public view returns (uint256, uint256, uint256, uint256) {
+    require(hasEdge(user_id_1, user_id_2));
+    return (user_id_1, user_id_2, joint_acc_contribution[user_id_1][user_id_2], joint_acc_contribution[user_id_2][user_id_1]);
+  }
+
   function sendAmount(uint256 user_id_1, uint256 user_id_2) public {
     uint256[] memory path = shortestPath(user_id_1, user_id_2);
+    require(path.length > 0);
+
     bool satisfied = true;
-    for (uint256 i = path.length - 1; i > 0; i--) {
+    for (uint256 i = 0; i < path.length - 1; i++) {
       uint256 curr = path[i];
-      uint256 next = path[i-1];
+      uint256 next = path[i+1];
       if (joint_acc_contribution[curr][next] < 1) {
         satisfied = false;
         break;
@@ -51,25 +80,25 @@ contract Payment {
     }
 
     if (satisfied) {
-      for (uint256 i = path.length - 1; i > 0; i--) {
+      for (uint256 i = 0; i < path.length - 1; i++) {
         uint256 curr = path[i];
-        uint256 next = path[i-1];
+        uint256 next = path[i+1];
         joint_acc_contribution[curr][next] -= 1;
         joint_acc_contribution[next][curr] += 1;
       }
     }
   }
 
-  function shortestPath(uint user_id_1, uint user_id_2) public returns (uint256[] memory) {
+  function shortestPath(uint256 user_id_1, uint256 user_id_2) public returns (uint256[] memory) {
     uint256[] memory queue = new uint256[](COUNT+1);
-    bool[] memory visited = new bool[](COUNT+1);
-    uint256[] memory prev = new uint256[](COUNT+1);
+    DynamicMapping visited = new DynamicMapping();
+    DynamicMapping prev = new DynamicMapping();
 
     bool found = false;
     uint start = 0;
     uint end = 1;
     queue[start] = user_id_1;
-    visited[user_id_1] = true;
+    visited.update(user_id_1, 1);
     while(start < end)
     {
       uint256 curr = queue[start];
@@ -77,16 +106,17 @@ contract Payment {
       for (uint256 i = 0; i < adj[curr].length; i++)
       {
         uint256 next = adj[curr][i];
-        if (!visited[next])
+        if (visited.get(next) == 0)
         {
-          prev[next] = curr;
-          visited[next] = true;
+          prev.update(next, curr);
+          visited.update(next, 1);
           queue[end] = next;
-          end += 1;
+          end++;
 
-          if (next == user_id_2)
+          if (next == user_id_2) {
             found = true;
             break;
+          }
         }
       }
       if (found)
@@ -95,16 +125,19 @@ contract Payment {
     if (!found)
       return new uint256[](0);
 
-    uint256[] memory path;
-    uint256 j = 0;
+    uint depth = 1;
     uint256 c = user_id_2;
-    while(c != user_id_1)
-    {
-      path[j] = c;
-      c = prev[c];
-      j += 1;
+    while(c != user_id_1) {
+      depth++;
+      c = prev.get(c);
     }
-    path[j] = user_id_1;
+
+    uint256[] memory path = new uint256[](depth);
+    c = user_id_2;
+    for (uint256 i = 0; i < depth; i++) {
+      path[depth - i - 1] = c;
+      c = prev.get(c);
+    }
     return path;
   }
 
