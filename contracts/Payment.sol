@@ -97,6 +97,8 @@ contract Payment {
 
   function getFailureReason(uint256 user_id_1, uint256 user_id_2) public returns (uint256[] memory, uint256[] memory) {
     uint256[] memory path = shortestPath(user_id_1, user_id_2);
+    if (path.length == 0)
+      return (new uint256[](0), new uint256[](0));
     uint256[] memory balances = new uint256[](path.length-1);
     
     for (uint256 i = 0; i < path.length - 1; i++) {

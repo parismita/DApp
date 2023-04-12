@@ -37,7 +37,7 @@ def setup_connection(ganache_url, compiled_contract_path, contract_address):
 def build_network(n=100):
     p = np.log(n)/n
     while True:
-        G = nx.barabasi_albert_graph(n, 2, seed=42)
+        G = nx.barabasi_albert_graph(n, 5, seed=42)
         if nx.is_connected(G):
             break
     edge_weights = {}
@@ -100,7 +100,7 @@ def run():
     print(successful_txns)
     
     if args.plot:
-        plt.plot([i for i in range(10)], [i/1000 for i in successful_txns], 'r--', linewidth=2)
+        plt.plot([100*i for i in range(1, len(successful_txns)+1)], [i/1000 for i in successful_txns], 'r--', linewidth=2)
         plt.xlabel("Number of Transactions")
         plt.ylabel("Fraction of Successful Transactions")
         plt.title("Fraction of Successful Transactions vs Number of Transactions")

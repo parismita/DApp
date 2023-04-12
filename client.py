@@ -11,7 +11,7 @@ w3 = Web3(provider)
 print(w3.is_connected())
 
 #replace the address with your contract address (!very important)
-deployed_contract_address = '0x8C7b9A7355Adb4d32a39e85a8BF853aB4406438a'
+deployed_contract_address = '0x5D177Aa5b123b6993158db012479C2be4F702f1A'
 
 #path of the contract json file. edit it with your contract json file
 compiled_contract_path ="build/contracts/Payment.json"
@@ -57,12 +57,12 @@ print(contract.functions.getUser(100).call({'from': w3.eth.accounts[0]}))
 print(contract.functions.getUser(101).call({'from': w3.eth.accounts[0]}))
 print(contract.functions.getUser(102).call({'from': w3.eth.accounts[0]}))
 
-tx_hash = contract.functions.createAcc(100, 101, 10).transact({'txType':"0x3", 'from':w3.eth.accounts[0], 'gas':30000000})
+tx_hash = contract.functions.createAcc(100, 101, 10000).transact({'txType':"0x3", 'from':w3.eth.accounts[0], 'gas':30000000})
 tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
 print(tx_receipt)
 print(tx_receipt['status'])
 
-tx_hash = contract.functions.createAcc(101, 102, 10).transact({'txType':"0x3", 'from':w3.eth.accounts[0], 'gas':30000000})
+tx_hash = contract.functions.createAcc(101, 102, 10000).transact({'txType':"0x3", 'from':w3.eth.accounts[0], 'gas':30000000})
 tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
 print(tx_receipt)
 print(tx_receipt['status'])
