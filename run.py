@@ -37,7 +37,7 @@ def setup_connection(ganache_url, compiled_contract_path, contract_address):
 def build_network(n=100):
     p = np.log(n)/n
     while True:
-        G = nx.barabasi_albert_graph(n, 5, seed=42)
+        G = nx.barabasi_albert_graph(n, 3, seed=42)
         if nx.is_connected(G):
             break
     edge_weights = {}
