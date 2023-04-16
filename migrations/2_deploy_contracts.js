@@ -1,4 +1,4 @@
-var Payment = artifacts.require("./contracts/Payment.sol");
+var Payment = artifacts.require("./Payment.sol");
 
 module.exports = function(deployer) {
   deployer.deploy(Payment);
